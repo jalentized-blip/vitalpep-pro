@@ -321,6 +321,21 @@ function vpp_fp_meta_callback( $post ) {
     }
     echo "</select></td></tr>";
 
+    $h( '🔐 Verification (QR Code)' );
+    $token = $g( '_vpp_fp_verify_token' );
+    if ( $token ) {
+        $verify_url = 'https://jalentized-blip.github.io/vitalpep-pro/verify/?t=' . $token;
+        echo "<tr><th style='width:180px'>Verification Token</th><td>";
+        echo "<code style='font-size:.85em;background:#f0f0f1;padding:4px 8px;border-radius:4px;user-select:all'>" . esc_html( $token ) . "</code>";
+        echo "<p class='description' style='margin-top:6px'>QR URL: <a href='" . esc_url( $verify_url ) . "' target='_blank'>" . esc_html( $verify_url ) . "</a></p>";
+        echo "<p class='description'>This token is read-only and is used to authenticate scans of the physical pen label QR code.</p>";
+        echo "</td></tr>";
+    } else {
+        echo "<tr><th style='width:180px'>Verification Token</th><td>";
+        echo "<span style='color:#999'>No token yet — will be assigned automatically on next admin page load.</span>";
+        echo "</td></tr>";
+    }
+
     $h( '🎨 Layout' );
     $layout = $g( '_vpp_fp_layout' );
     echo "<tr><th><label for='_vpp_fp_layout'>Section Style</label></th><td><select id='_vpp_fp_layout' name='_vpp_fp_layout'>";
@@ -804,6 +819,7 @@ function vitalpep_create_pages() {
         array( 'title' => 'Dosage Calculator','slug' => 'calculator',  'template' => 'page-calculator.php' ),
         array( 'title' => 'Contact',          'slug' => 'contact',     'template' => 'page-contact.php' ),
         array( 'title' => 'FAQ',              'slug' => 'faq',         'template' => 'page-faq.php' ),
+        array( 'title' => 'Verify',           'slug' => 'verify',      'template' => 'page-verify.php' ),
     );
 
     foreach ( $pages as $page ) {
@@ -1430,6 +1446,7 @@ add_action( 'admin_init', function() {
             '_vpp_fp_storage'  => '2–8 °C · do not freeze', '_vpp_fp_batch' => 'NL-2026-A',
             '_vpp_fp_pdf'      => $uri . '/assets/pdfs/ghkcu-dosage-manual.pdf',
             '_vpp_fp_inquiry'  => 'GHK-Cu+FlexPen', '_vpp_fp_img_fallback' => 'flexpenspageimages/ghkpen.jpg',
+            '_vpp_fp_verify_token' => 'b0bcd45bc5982e60f42c3adb107e6da1',
             '_vpp_fp_show_in_reel' => '1', '_vpp_fp_reel_extra' => 'cGMP Netherlands',
             '_vpp_fp_show_in_dosing' => '1', '_vpp_fp_show_in_calc' => '1',
             '_vpp_fp_calc_mg' => '100', '_vpp_fp_calc_ml' => '3', '_vpp_fp_calc_maxdose' => '5',
@@ -1451,6 +1468,7 @@ add_action( 'admin_init', function() {
             '_vpp_fp_storage'  => '2–8 °C · do not freeze', '_vpp_fp_batch' => 'NL-2026-B',
             '_vpp_fp_pdf'      => $uri . '/assets/pdfs/retatrutide-dosage-manual.pdf',
             '_vpp_fp_inquiry'  => 'Retatrutide+FlexPen', '_vpp_fp_img_fallback' => 'flexpenspageimages/retapen.jpg',
+            '_vpp_fp_verify_token' => 'd4bca322cd401614e471d97b07b8427a',
             '_vpp_fp_show_in_reel' => '1', '_vpp_fp_reel_extra' => 'Triple Agonist',
             '_vpp_fp_show_in_dosing' => '1', '_vpp_fp_show_in_calc' => '1',
             '_vpp_fp_calc_mg' => '30', '_vpp_fp_calc_ml' => '3', '_vpp_fp_calc_maxdose' => '12',
@@ -1472,6 +1490,7 @@ add_action( 'admin_init', function() {
             '_vpp_fp_storage'  => '2–8 °C · do not freeze', '_vpp_fp_batch' => 'NL-2026-C',
             '_vpp_fp_pdf'      => $uri . '/assets/pdfs/melanotan2-dosage-manual.pdf',
             '_vpp_fp_inquiry'  => 'Melanotan+II+FlexPen', '_vpp_fp_img_fallback' => 'flexpenspageimages/mt2pen.jpg',
+            '_vpp_fp_verify_token' => 'a94ebfa73ef1b50148b090c3bc2998fa',
             '_vpp_fp_show_in_reel' => '1', '_vpp_fp_reel_extra' => 'Melanocortin Agonist',
             '_vpp_fp_show_in_dosing' => '1', '_vpp_fp_show_in_calc' => '1',
             '_vpp_fp_calc_mg' => '10', '_vpp_fp_calc_ml' => '3', '_vpp_fp_calc_maxdose' => '1000',
@@ -1493,6 +1512,7 @@ add_action( 'admin_init', function() {
             '_vpp_fp_storage'  => '2–8 °C · do not freeze', '_vpp_fp_batch' => 'NL-2026-D',
             '_vpp_fp_pdf'      => $uri . '/assets/pdfs/nadplus-dosage-manual.pdf',
             '_vpp_fp_inquiry'  => 'NAD%2B+FlexPen', '_vpp_fp_img_fallback' => 'flexpenspageimages/nadpen.jpg',
+            '_vpp_fp_verify_token' => 'fadfb75e87ea0f7d9350a4c63f553992',
             '_vpp_fp_show_in_reel' => '1', '_vpp_fp_reel_extra' => 'cGMP Netherlands',
             '_vpp_fp_show_in_dosing' => '1', '_vpp_fp_show_in_calc' => '1',
             '_vpp_fp_calc_mg' => '500', '_vpp_fp_calc_ml' => '3', '_vpp_fp_calc_maxdose' => '500',
@@ -1514,6 +1534,7 @@ add_action( 'admin_init', function() {
             '_vpp_fp_storage'  => '2–8 °C · do not freeze', '_vpp_fp_batch' => 'NL-2026-E',
             '_vpp_fp_pdf'      => $uri . '/assets/pdfs/semaglutide-dosage-manual.pdf',
             '_vpp_fp_inquiry'  => 'Semaglutide+FlexPen', '_vpp_fp_img_fallback' => 'flexpenspageimages/semapen.jpg',
+            '_vpp_fp_verify_token' => 'b7db409860667801b04ac0f4f257fe4b',
             '_vpp_fp_show_in_reel' => '1', '_vpp_fp_reel_extra' => 'GLP-1 Agonist',
             '_vpp_fp_show_in_dosing' => '1', '_vpp_fp_show_in_calc' => '1',
             '_vpp_fp_calc_mg' => '10', '_vpp_fp_calc_ml' => '3', '_vpp_fp_calc_maxdose' => '2',
@@ -1535,6 +1556,7 @@ add_action( 'admin_init', function() {
             '_vpp_fp_storage'  => '2–8 °C · do not freeze', '_vpp_fp_batch' => 'NL-2026-F',
             '_vpp_fp_pdf'      => $uri . '/assets/pdfs/tirzepatide-dosage-manual.pdf',
             '_vpp_fp_inquiry'  => 'Tirzepatide+FlexPen', '_vpp_fp_img_fallback' => 'flexpenspageimages/tirzpen.jpg',
+            '_vpp_fp_verify_token' => '9ba683c6f0023e4fb45bfc15000ff030',
             '_vpp_fp_show_in_reel' => '1', '_vpp_fp_reel_extra' => 'Dual GIP/GLP-1',
             '_vpp_fp_show_in_dosing' => '1', '_vpp_fp_show_in_calc' => '1',
             '_vpp_fp_calc_mg' => '30', '_vpp_fp_calc_ml' => '3', '_vpp_fp_calc_maxdose' => '15',
@@ -1556,6 +1578,7 @@ add_action( 'admin_init', function() {
             '_vpp_fp_storage'  => '2–8 °C · do not freeze', '_vpp_fp_batch' => 'NL-2026-G',
             '_vpp_fp_pdf'      => $uri . '/assets/pdfs/bpc157-tb500-dosage-manual.pdf',
             '_vpp_fp_inquiry'  => 'BPC-157+TB-500+Blend+FlexPen', '_vpp_fp_img_fallback' => 'flexpenspageimages/bpc157tb500pen.jpg',
+            '_vpp_fp_verify_token' => '01cebed97182cb296830bc314a63e0d8',
             '_vpp_fp_show_in_reel' => '1', '_vpp_fp_reel_extra' => 'Dual Peptide Synergy',
             '_vpp_fp_show_in_dosing' => '1', '_vpp_fp_show_in_calc' => '1',
             '_vpp_fp_calc_mg' => '20', '_vpp_fp_calc_ml' => '3', '_vpp_fp_calc_maxdose' => '750',
@@ -1591,6 +1614,38 @@ add_action( 'admin_init', function() {
         }
     }
     set_transient( 'vpp_flexpens_seeded_v3', true, YEAR_IN_SECONDS );
+} );
+
+/* =========================================================================
+   FLEXPEN VERIFICATION TOKENS — ensure all existing pens have their token
+   Runs once on admin_init; safe to re-run (add_post_meta with unique=true).
+   ========================================================================= */
+add_action( 'admin_init', function() {
+    if ( get_transient( 'vpp_tokens_applied_v1' ) ) return;
+    $token_map = array(
+        'ghkcu-flexpen'        => 'b0bcd45bc5982e60f42c3adb107e6da1',
+        'retatrutide-flexpen'  => 'd4bca322cd401614e471d97b07b8427a',
+        'melanotan-flexpen'    => 'a94ebfa73ef1b50148b090c3bc2998fa',
+        'nadplus-flexpen'      => 'fadfb75e87ea0f7d9350a4c63f553992',
+        'semaglutide-flexpen'  => 'b7db409860667801b04ac0f4f257fe4b',
+        'tirzepatide-flexpen'  => '9ba683c6f0023e4fb45bfc15000ff030',
+        'bpc157-tb500-flexpen' => '01cebed97182cb296830bc314a63e0d8',
+    );
+    foreach ( $token_map as $slug => $token ) {
+        $posts = get_posts( array(
+            'post_type'   => 'vp_flexpen',
+            'name'        => $slug,
+            'post_status' => 'publish',
+            'numberposts' => 1,
+        ) );
+        if ( empty( $posts ) ) continue;
+        $post_id = $posts[0]->ID;
+        // Only set if not already present (preserves manually overridden tokens)
+        if ( ! get_post_meta( $post_id, '_vpp_fp_verify_token', true ) ) {
+            update_post_meta( $post_id, '_vpp_fp_verify_token', $token );
+        }
+    }
+    set_transient( 'vpp_tokens_applied_v1', true, YEAR_IN_SECONDS );
 } );
 
 /* =========================================================================
