@@ -1649,6 +1649,38 @@ add_action( 'admin_init', function() {
 } );
 
 /* =========================================================================
+   FLEXPEN CAROUSEL IMAGES — ensure all existing pens have carousel image set
+   Runs once on admin_init so the homepage hero shows pen photos out of the box.
+   ========================================================================= */
+add_action( 'admin_init', function() {
+    if ( get_transient( 'vpp_carousel_applied_v1' ) ) return;
+    $uri = get_template_directory_uri();
+    $carousel_map = array(
+        'ghkcu-flexpen'        => $uri . '/assets/images/flexpenspageimages/ghkpen.jpg',
+        'retatrutide-flexpen'  => $uri . '/assets/images/flexpenspageimages/retapen.jpg',
+        'melanotan-flexpen'    => $uri . '/assets/images/flexpenspageimages/mt2pen.jpg',
+        'nadplus-flexpen'      => $uri . '/assets/images/flexpenspageimages/nadpen.jpg',
+        'semaglutide-flexpen'  => $uri . '/assets/images/flexpenspageimages/semapen.jpg',
+        'tirzepatide-flexpen'  => $uri . '/assets/images/flexpenspageimages/tirzpen.jpg',
+        'bpc157-tb500-flexpen' => $uri . '/assets/images/flexpenspageimages/bpc157tb500pen.jpg',
+    );
+    foreach ( $carousel_map as $slug => $img_url ) {
+        $posts = get_posts( array(
+            'post_type'   => 'vp_flexpen',
+            'name'        => $slug,
+            'post_status' => 'publish',
+            'numberposts' => 1,
+        ) );
+        if ( empty( $posts ) ) continue;
+        $post_id = $posts[0]->ID;
+        if ( ! get_post_meta( $post_id, '_vpp_fp_img_carousel', true ) ) {
+            update_post_meta( $post_id, '_vpp_fp_img_carousel', $img_url );
+        }
+    }
+    set_transient( 'vpp_carousel_applied_v1', true, YEAR_IN_SECONDS );
+} );
+
+/* =========================================================================
    FLEXPEN CPT — ADMIN LIST COLUMNS
    Adds Image, Showcase, Calculator, and Dosing PDF columns to the list view.
    ========================================================================= */
