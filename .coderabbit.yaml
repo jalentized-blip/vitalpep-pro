@@ -1,0 +1,53 @@
+language: "en-US"
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  auto_review:
+    enabled: true
+    drafts: false
+
+  path_filters:
+    - "!assets/images/**"
+    - "!assets/pdfs/**"
+
+  path_instructions:
+    - path: "functions.php"
+      instructions: |
+        This is a WordPress theme's functions.php. Key areas to review:
+        - Security: nonce verification, capability checks, input sanitization (sanitize_text_field, sanitize_textarea_field, esc_* on output)
+        - All meta box saves must verify nonce and check current_user_can
+        - AJAX handlers must use check_ajax_referer and wp_send_json_success/error
+        - No direct SQL queries — use WP_Query or get_posts
+        - Hook priorities and potential conflicts
+
+    - path: "front-page.php"
+      instructions: |
+        Homepage template. Review for:
+        - All output must use esc_html(), esc_url(), esc_attr() appropriately
+        - WP_Query loops must call wp_reset_postdata()
+        - No inline styles that should be in CSS files
+
+    - path: "page-*.php"
+      instructions: |
+        Page templates. Review for proper output escaping, correct use of
+        WordPress template tags, and no hardcoded content that should be
+        driven by CPT or Customizer settings.
+
+    - path: "inc/customizer.php"
+      instructions: |
+        Customizer settings. Ensure all settings have sanitize_callback defined.
+
+    - path: "assets/js/*.js"
+      instructions: |
+        JavaScript files. Review for:
+        - jQuery usage (this theme uses jQuery)
+        - No inline event handlers — use delegated events
+        - AJAX calls should use wp.ajax or jQuery.post with ajaxurl
+
+chat:
+  auto_reply: true
