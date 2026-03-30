@@ -9,7 +9,7 @@
         (function() {
             var t = new URLSearchParams(window.location.search).get('t') || '';
             if (t && typeof VERIFY_DOMAIN !== 'undefined') {
-                window.location.replace(VERIFY_DOMAIN + '/verify/?t=' + encodeURIComponent(t));
+                window.location.replace(VERIFY_DOMAIN + '/verify/' + t + '/');
             } else if (typeof VERIFY_DOMAIN !== 'undefined') {
                 window.location.replace(VERIFY_DOMAIN + '/verify/');
             }
@@ -36,7 +36,7 @@
         // Set fallback link
         var t = new URLSearchParams(window.location.search).get('t') || '';
         var link = typeof VERIFY_DOMAIN !== 'undefined'
-            ? VERIFY_DOMAIN + '/verify/?t=' + encodeURIComponent(t)
+            ? VERIFY_DOMAIN + '/verify/' + t + '/'
             : 'https://vitalpeppro.com/verify/';
         document.getElementById('fallback').href = link;
     </script>

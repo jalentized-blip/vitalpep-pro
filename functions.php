@@ -1412,6 +1412,31 @@ add_action( 'init', function() {
 } );
 
 /* =========================================================================
+   VERIFY PAGE REWRITE RULE
+   Maps /verify/{32-char-token}/ → the Verify page with vpp_token query var
+   so the token travels as a clean URL path segment instead of ?t= query string.
+   ========================================================================= */
+add_action( 'init', function() {
+    add_rewrite_rule(
+        '^verify/([a-f0-9]{32})/?$',
+        'index.php?pagename=verify&vpp_token=$matches[1]',
+        'top'
+    );
+} );
+
+add_filter( 'query_vars', function( $vars ) {
+    $vars[] = 'vpp_token';
+    return $vars;
+} );
+
+add_action( 'admin_init', function() {
+    if ( ! get_option( 'vpp_verify_rewrite_flushed' ) ) {
+        flush_rewrite_rules();
+        update_option( 'vpp_verify_rewrite_flushed', '1' );
+    }
+} );
+
+/* =========================================================================
    OUTPUT CUSTOM BRAND COLORS AS CSS VARIABLES
    ========================================================================= */
 add_action( 'wp_head', function() {

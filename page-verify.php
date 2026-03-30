@@ -5,7 +5,12 @@
  */
 
 // Look up FlexPen by verification token
-$token    = isset( $_GET['t'] ) ? sanitize_text_field( $_GET['t'] ) : '';
+// Token arrives via clean URL: /verify/{token}/ → vpp_token rewrite var
+// Falls back to ?t= for direct browser testing
+$token = sanitize_text_field( get_query_var( 'vpp_token', '' ) );
+if ( ! $token ) {
+    $token = isset( $_GET['t'] ) ? sanitize_text_field( $_GET['t'] ) : '';
+}
 $verified = false;
 $pen_post = null;
 
