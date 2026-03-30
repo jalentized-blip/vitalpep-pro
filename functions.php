@@ -801,7 +801,15 @@ add_filter( 'excerpt_length', function() { return 20; } );
    ========================================================================= */
 function vitalpep_rewrite_flush() {
     vitalpep_register_post_types();
+    // Register verify rewrite rule before flushing so it's included
+    add_rewrite_rule( '^verify/([a-f0-9]{32})/?$', 'index.php?pagename=verify&vpp_token=$matches[1]', 'top' );
+    // Ensure permalinks are not Plain (Plain disables all rewrite rules)
+    if ( get_option( 'permalink_structure' ) === '' ) {
+        update_option( 'permalink_structure', '/%postname%/' );
+    }
     flush_rewrite_rules();
+    // Reset flush flag so admin_init re-runs on next visit
+    delete_option( 'vpp_verify_rewrite_flushed_v2' );
 }
 add_action( 'after_switch_theme', 'vitalpep_rewrite_flush' );
 
@@ -1430,9 +1438,14 @@ add_filter( 'query_vars', function( $vars ) {
 } );
 
 add_action( 'admin_init', function() {
-    if ( ! get_option( 'vpp_verify_rewrite_flushed' ) ) {
+    // Force re-flush whenever this version changes so the verify rewrite rule activates
+    if ( ! get_option( 'vpp_verify_rewrite_flushed_v2' ) ) {
+        // Ensure permalinks are not set to Plain — Plain breaks rewrite rules
+        if ( get_option( 'permalink_structure' ) === '' ) {
+            update_option( 'permalink_structure', '/%postname%/' );
+        }
         flush_rewrite_rules();
-        update_option( 'vpp_verify_rewrite_flushed', '1' );
+        update_option( 'vpp_verify_rewrite_flushed_v2', '1' );
     }
 } );
 
