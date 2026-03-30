@@ -10,6 +10,9 @@ reviews:
   auto_review:
     enabled: true
     drafts: false
+    base_branches:
+      - "master"
+      - "review-base"
 
   path_filters:
     - "!assets/images/**"
