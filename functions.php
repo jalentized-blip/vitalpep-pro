@@ -321,6 +321,21 @@ function vpp_fp_meta_callback( $post ) {
     }
     echo "</select></td></tr>";
 
+    $h( '🔐 Verification (QR Code)' );
+    $token = $g( '_vpp_fp_verify_token' );
+    if ( $token ) {
+        $verify_url = 'https://jalentized-blip.github.io/vitalpep-pro/verify/?t=' . $token;
+        echo "<tr><th style='width:180px'>Verification Token</th><td>";
+        echo "<code style='font-size:.85em;background:#f0f0f1;padding:4px 8px;border-radius:4px;user-select:all'>" . esc_html( $token ) . "</code>";
+        echo "<p class='description' style='margin-top:6px'>QR URL: <a href='" . esc_url( $verify_url ) . "' target='_blank'>" . esc_html( $verify_url ) . "</a></p>";
+        echo "<p class='description'>This token is read-only and is used to authenticate scans of the physical pen label QR code.</p>";
+        echo "</td></tr>";
+    } else {
+        echo "<tr><th style='width:180px'>Verification Token</th><td>";
+        echo "<span style='color:#999'>No token yet — will be assigned automatically on next admin page load.</span>";
+        echo "</td></tr>";
+    }
+
     $h( '🎨 Layout' );
     $layout = $g( '_vpp_fp_layout' );
     echo "<tr><th><label for='_vpp_fp_layout'>Section Style</label></th><td><select id='_vpp_fp_layout' name='_vpp_fp_layout'>";
@@ -786,7 +801,15 @@ add_filter( 'excerpt_length', function() { return 20; } );
    ========================================================================= */
 function vitalpep_rewrite_flush() {
     vitalpep_register_post_types();
+    // Register verify rewrite rule before flushing so it's included
+    add_rewrite_rule( '^verify/([a-f0-9]{32})/?$', 'index.php?pagename=verify&vpp_token=$matches[1]', 'top' );
+    // Ensure permalinks are not Plain (Plain disables all rewrite rules)
+    if ( get_option( 'permalink_structure' ) === '' ) {
+        update_option( 'permalink_structure', '/%postname%/' );
+    }
     flush_rewrite_rules();
+    // Reset flush flag so admin_init re-runs on next visit
+    delete_option( 'vpp_verify_rewrite_flushed_v2' );
 }
 add_action( 'after_switch_theme', 'vitalpep_rewrite_flush' );
 
@@ -804,6 +827,7 @@ function vitalpep_create_pages() {
         array( 'title' => 'Dosage Calculator','slug' => 'calculator',  'template' => 'page-calculator.php' ),
         array( 'title' => 'Contact',          'slug' => 'contact',     'template' => 'page-contact.php' ),
         array( 'title' => 'FAQ',              'slug' => 'faq',         'template' => 'page-faq.php' ),
+        array( 'title' => 'Verify',           'slug' => 'verify',      'template' => 'page-verify.php' ),
     );
 
     foreach ( $pages as $page ) {
@@ -1396,6 +1420,36 @@ add_action( 'init', function() {
 } );
 
 /* =========================================================================
+   VERIFY PAGE REWRITE RULE
+   Maps /verify/{32-char-token}/ → the Verify page with vpp_token query var
+   so the token travels as a clean URL path segment instead of ?t= query string.
+   ========================================================================= */
+add_action( 'init', function() {
+    add_rewrite_rule(
+        '^verify/([a-f0-9]{32})/?$',
+        'index.php?pagename=verify&vpp_token=$matches[1]',
+        'top'
+    );
+} );
+
+add_filter( 'query_vars', function( $vars ) {
+    $vars[] = 'vpp_token';
+    return $vars;
+} );
+
+add_action( 'admin_init', function() {
+    // Force re-flush whenever this version changes so the verify rewrite rule activates
+    if ( ! get_option( 'vpp_verify_rewrite_flushed_v2' ) ) {
+        // Ensure permalinks are not set to Plain — Plain breaks rewrite rules
+        if ( get_option( 'permalink_structure' ) === '' ) {
+            update_option( 'permalink_structure', '/%postname%/' );
+        }
+        flush_rewrite_rules();
+        update_option( 'vpp_verify_rewrite_flushed_v2', '1' );
+    }
+} );
+
+/* =========================================================================
    OUTPUT CUSTOM BRAND COLORS AS CSS VARIABLES
    ========================================================================= */
 add_action( 'wp_head', function() {
@@ -1430,6 +1484,7 @@ add_action( 'admin_init', function() {
             '_vpp_fp_storage'  => '2–8 °C · do not freeze', '_vpp_fp_batch' => 'NL-2026-A',
             '_vpp_fp_pdf'      => $uri . '/assets/pdfs/ghkcu-dosage-manual.pdf',
             '_vpp_fp_inquiry'  => 'GHK-Cu+FlexPen', '_vpp_fp_img_fallback' => 'flexpenspageimages/ghkpen.jpg',
+            '_vpp_fp_verify_token' => 'b0bcd45bc5982e60f42c3adb107e6da1',
             '_vpp_fp_show_in_reel' => '1', '_vpp_fp_reel_extra' => 'cGMP Netherlands',
             '_vpp_fp_show_in_dosing' => '1', '_vpp_fp_show_in_calc' => '1',
             '_vpp_fp_calc_mg' => '100', '_vpp_fp_calc_ml' => '3', '_vpp_fp_calc_maxdose' => '5',
@@ -1451,6 +1506,7 @@ add_action( 'admin_init', function() {
             '_vpp_fp_storage'  => '2–8 °C · do not freeze', '_vpp_fp_batch' => 'NL-2026-B',
             '_vpp_fp_pdf'      => $uri . '/assets/pdfs/retatrutide-dosage-manual.pdf',
             '_vpp_fp_inquiry'  => 'Retatrutide+FlexPen', '_vpp_fp_img_fallback' => 'flexpenspageimages/retapen.jpg',
+            '_vpp_fp_verify_token' => 'd4bca322cd401614e471d97b07b8427a',
             '_vpp_fp_show_in_reel' => '1', '_vpp_fp_reel_extra' => 'Triple Agonist',
             '_vpp_fp_show_in_dosing' => '1', '_vpp_fp_show_in_calc' => '1',
             '_vpp_fp_calc_mg' => '30', '_vpp_fp_calc_ml' => '3', '_vpp_fp_calc_maxdose' => '12',
@@ -1472,6 +1528,7 @@ add_action( 'admin_init', function() {
             '_vpp_fp_storage'  => '2–8 °C · do not freeze', '_vpp_fp_batch' => 'NL-2026-C',
             '_vpp_fp_pdf'      => $uri . '/assets/pdfs/melanotan2-dosage-manual.pdf',
             '_vpp_fp_inquiry'  => 'Melanotan+II+FlexPen', '_vpp_fp_img_fallback' => 'flexpenspageimages/mt2pen.jpg',
+            '_vpp_fp_verify_token' => 'a94ebfa73ef1b50148b090c3bc2998fa',
             '_vpp_fp_show_in_reel' => '1', '_vpp_fp_reel_extra' => 'Melanocortin Agonist',
             '_vpp_fp_show_in_dosing' => '1', '_vpp_fp_show_in_calc' => '1',
             '_vpp_fp_calc_mg' => '10', '_vpp_fp_calc_ml' => '3', '_vpp_fp_calc_maxdose' => '1000',
@@ -1493,6 +1550,7 @@ add_action( 'admin_init', function() {
             '_vpp_fp_storage'  => '2–8 °C · do not freeze', '_vpp_fp_batch' => 'NL-2026-D',
             '_vpp_fp_pdf'      => $uri . '/assets/pdfs/nadplus-dosage-manual.pdf',
             '_vpp_fp_inquiry'  => 'NAD%2B+FlexPen', '_vpp_fp_img_fallback' => 'flexpenspageimages/nadpen.jpg',
+            '_vpp_fp_verify_token' => 'fadfb75e87ea0f7d9350a4c63f553992',
             '_vpp_fp_show_in_reel' => '1', '_vpp_fp_reel_extra' => 'cGMP Netherlands',
             '_vpp_fp_show_in_dosing' => '1', '_vpp_fp_show_in_calc' => '1',
             '_vpp_fp_calc_mg' => '500', '_vpp_fp_calc_ml' => '3', '_vpp_fp_calc_maxdose' => '500',
@@ -1514,6 +1572,7 @@ add_action( 'admin_init', function() {
             '_vpp_fp_storage'  => '2–8 °C · do not freeze', '_vpp_fp_batch' => 'NL-2026-E',
             '_vpp_fp_pdf'      => $uri . '/assets/pdfs/semaglutide-dosage-manual.pdf',
             '_vpp_fp_inquiry'  => 'Semaglutide+FlexPen', '_vpp_fp_img_fallback' => 'flexpenspageimages/semapen.jpg',
+            '_vpp_fp_verify_token' => 'b7db409860667801b04ac0f4f257fe4b',
             '_vpp_fp_show_in_reel' => '1', '_vpp_fp_reel_extra' => 'GLP-1 Agonist',
             '_vpp_fp_show_in_dosing' => '1', '_vpp_fp_show_in_calc' => '1',
             '_vpp_fp_calc_mg' => '10', '_vpp_fp_calc_ml' => '3', '_vpp_fp_calc_maxdose' => '2',
@@ -1535,6 +1594,7 @@ add_action( 'admin_init', function() {
             '_vpp_fp_storage'  => '2–8 °C · do not freeze', '_vpp_fp_batch' => 'NL-2026-F',
             '_vpp_fp_pdf'      => $uri . '/assets/pdfs/tirzepatide-dosage-manual.pdf',
             '_vpp_fp_inquiry'  => 'Tirzepatide+FlexPen', '_vpp_fp_img_fallback' => 'flexpenspageimages/tirzpen.jpg',
+            '_vpp_fp_verify_token' => '9ba683c6f0023e4fb45bfc15000ff030',
             '_vpp_fp_show_in_reel' => '1', '_vpp_fp_reel_extra' => 'Dual GIP/GLP-1',
             '_vpp_fp_show_in_dosing' => '1', '_vpp_fp_show_in_calc' => '1',
             '_vpp_fp_calc_mg' => '30', '_vpp_fp_calc_ml' => '3', '_vpp_fp_calc_maxdose' => '15',
@@ -1556,6 +1616,7 @@ add_action( 'admin_init', function() {
             '_vpp_fp_storage'  => '2–8 °C · do not freeze', '_vpp_fp_batch' => 'NL-2026-G',
             '_vpp_fp_pdf'      => $uri . '/assets/pdfs/bpc157-tb500-dosage-manual.pdf',
             '_vpp_fp_inquiry'  => 'BPC-157+TB-500+Blend+FlexPen', '_vpp_fp_img_fallback' => 'flexpenspageimages/bpc157tb500pen.jpg',
+            '_vpp_fp_verify_token' => '01cebed97182cb296830bc314a63e0d8',
             '_vpp_fp_show_in_reel' => '1', '_vpp_fp_reel_extra' => 'Dual Peptide Synergy',
             '_vpp_fp_show_in_dosing' => '1', '_vpp_fp_show_in_calc' => '1',
             '_vpp_fp_calc_mg' => '20', '_vpp_fp_calc_ml' => '3', '_vpp_fp_calc_maxdose' => '750',
@@ -1591,6 +1652,82 @@ add_action( 'admin_init', function() {
         }
     }
     set_transient( 'vpp_flexpens_seeded_v3', true, YEAR_IN_SECONDS );
+} );
+
+/* =========================================================================
+   FLEXPEN VERIFICATION TOKENS — ensure all existing pens have their token
+   Runs once on admin_init; safe to re-run (add_post_meta with unique=true).
+   ========================================================================= */
+add_action( 'admin_init', function() {
+    if ( get_transient( 'vpp_tokens_applied_v2' ) ) return;
+    $token_map = array(
+        'ghkcu-flexpen'        => 'b0bcd45bc5982e60f42c3adb107e6da1',
+        'retatrutide-flexpen'  => 'd4bca322cd401614e471d97b07b8427a',
+        'melanotan-flexpen'    => 'a94ebfa73ef1b50148b090c3bc2998fa',
+        'nadplus-flexpen'      => 'fadfb75e87ea0f7d9350a4c63f553992',
+        'semaglutide-flexpen'  => 'b7db409860667801b04ac0f4f257fe4b',
+        'tirzepatide-flexpen'  => '9ba683c6f0023e4fb45bfc15000ff030',
+        'bpc157-tb500-flexpen' => '01cebed97182cb296830bc314a63e0d8',
+        'mots-c-flexpen'       => '9f18106c6a7585f608e2095442535b23',
+    );
+    foreach ( $token_map as $slug => $token ) {
+        $posts = get_posts( array(
+            'post_type'   => 'vp_flexpen',
+            'name'        => $slug,
+            'post_status' => 'publish',
+            'numberposts' => 1,
+        ) );
+        if ( empty( $posts ) ) continue;
+        $post_id = $posts[0]->ID;
+        if ( ! get_post_meta( $post_id, '_vpp_fp_verify_token', true ) ) {
+            update_post_meta( $post_id, '_vpp_fp_verify_token', $token );
+        }
+    }
+    // Also catch MOTS-c by title in case the slug differs from what was manually entered
+    $motsc_posts = get_posts( array(
+        'post_type'   => 'vp_flexpen',
+        'post_status' => 'publish',
+        'numberposts' => -1,
+        's'           => 'MOTS',
+    ) );
+    foreach ( $motsc_posts as $p ) {
+        if ( ! get_post_meta( $p->ID, '_vpp_fp_verify_token', true ) ) {
+            update_post_meta( $p->ID, '_vpp_fp_verify_token', '9f18106c6a7585f608e2095442535b23' );
+        }
+    }
+    set_transient( 'vpp_tokens_applied_v2', true, YEAR_IN_SECONDS );
+} );
+
+/* =========================================================================
+   FLEXPEN CAROUSEL IMAGES — ensure all existing pens have carousel image set
+   Runs once on admin_init so the homepage hero shows pen photos out of the box.
+   ========================================================================= */
+add_action( 'admin_init', function() {
+    if ( get_transient( 'vpp_carousel_applied_v1' ) ) return;
+    $uri = get_template_directory_uri();
+    $carousel_map = array(
+        'ghkcu-flexpen'        => $uri . '/assets/images/flexpenspageimages/ghkpen.jpg',
+        'retatrutide-flexpen'  => $uri . '/assets/images/flexpenspageimages/retapen.jpg',
+        'melanotan-flexpen'    => $uri . '/assets/images/flexpenspageimages/mt2pen.jpg',
+        'nadplus-flexpen'      => $uri . '/assets/images/flexpenspageimages/nadpen.jpg',
+        'semaglutide-flexpen'  => $uri . '/assets/images/flexpenspageimages/semapen.jpg',
+        'tirzepatide-flexpen'  => $uri . '/assets/images/flexpenspageimages/tirzpen.jpg',
+        'bpc157-tb500-flexpen' => $uri . '/assets/images/flexpenspageimages/bpc157tb500pen.jpg',
+    );
+    foreach ( $carousel_map as $slug => $img_url ) {
+        $posts = get_posts( array(
+            'post_type'   => 'vp_flexpen',
+            'name'        => $slug,
+            'post_status' => 'publish',
+            'numberposts' => 1,
+        ) );
+        if ( empty( $posts ) ) continue;
+        $post_id = $posts[0]->ID;
+        if ( ! get_post_meta( $post_id, '_vpp_fp_img_carousel', true ) ) {
+            update_post_meta( $post_id, '_vpp_fp_img_carousel', $img_url );
+        }
+    }
+    set_transient( 'vpp_carousel_applied_v1', true, YEAR_IN_SECONDS );
 } );
 
 /* =========================================================================

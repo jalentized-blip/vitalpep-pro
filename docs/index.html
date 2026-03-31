@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>VitalPep Pro</title>
+    <script src="config.js"></script>
+    <script>
+        if (typeof VERIFY_DOMAIN !== 'undefined') {
+            window.location.replace(VERIFY_DOMAIN);
+        }
+    </script>
+</head>
+<body>
+    <p>Redirecting to <a id="l" href="https://vitalpeppro.com">VitalPep Pro</a>...</p>
+    <script>
+        if (typeof VERIFY_DOMAIN !== 'undefined') document.getElementById('l').href = VERIFY_DOMAIN;
+    </script>
+</body>
+</html>
