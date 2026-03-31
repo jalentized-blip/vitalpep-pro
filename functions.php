@@ -1659,7 +1659,7 @@ add_action( 'admin_init', function() {
    Runs once on admin_init; safe to re-run (add_post_meta with unique=true).
    ========================================================================= */
 add_action( 'admin_init', function() {
-    if ( get_transient( 'vpp_tokens_applied_v1' ) ) return;
+    if ( get_transient( 'vpp_tokens_applied_v2' ) ) return;
     $token_map = array(
         'ghkcu-flexpen'        => 'b0bcd45bc5982e60f42c3adb107e6da1',
         'retatrutide-flexpen'  => 'd4bca322cd401614e471d97b07b8427a',
@@ -1668,6 +1668,7 @@ add_action( 'admin_init', function() {
         'semaglutide-flexpen'  => 'b7db409860667801b04ac0f4f257fe4b',
         'tirzepatide-flexpen'  => '9ba683c6f0023e4fb45bfc15000ff030',
         'bpc157-tb500-flexpen' => '01cebed97182cb296830bc314a63e0d8',
+        'mots-c-flexpen'       => '9f18106c6a7585f608e2095442535b23',
     );
     foreach ( $token_map as $slug => $token ) {
         $posts = get_posts( array(
@@ -1678,12 +1679,23 @@ add_action( 'admin_init', function() {
         ) );
         if ( empty( $posts ) ) continue;
         $post_id = $posts[0]->ID;
-        // Only set if not already present (preserves manually overridden tokens)
         if ( ! get_post_meta( $post_id, '_vpp_fp_verify_token', true ) ) {
             update_post_meta( $post_id, '_vpp_fp_verify_token', $token );
         }
     }
-    set_transient( 'vpp_tokens_applied_v1', true, YEAR_IN_SECONDS );
+    // Also catch MOTS-c by title in case the slug differs from what was manually entered
+    $motsc_posts = get_posts( array(
+        'post_type'   => 'vp_flexpen',
+        'post_status' => 'publish',
+        'numberposts' => -1,
+        's'           => 'MOTS',
+    ) );
+    foreach ( $motsc_posts as $p ) {
+        if ( ! get_post_meta( $p->ID, '_vpp_fp_verify_token', true ) ) {
+            update_post_meta( $p->ID, '_vpp_fp_verify_token', '9f18106c6a7585f608e2095442535b23' );
+        }
+    }
+    set_transient( 'vpp_tokens_applied_v2', true, YEAR_IN_SECONDS );
 } );
 
 /* =========================================================================
